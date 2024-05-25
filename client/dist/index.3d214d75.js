@@ -592,14 +592,27 @@ var _migrationsJson = require("../build/contracts/Migrations.json");
 var _migrationsJsonDefault = parcelHelpers.interopDefault(_migrationsJson);
 const CONTRACT_ADDRESS = (0, _migrationsJsonDefault.default).networks["5777"].address;
 const CONTRACT_ABI = (0, _migrationsJsonDefault.default).abi;
+if (typeof window.ethereum !== "undefined") console.log("MetaMask is installed!");
 const web3 = new (0, _web3Default.default)((0, _web3Default.default).givenProvider || "http://127.0.0.1:7545");
 const contract = new web3.eth.Contract(CONTRACT_ABI, CONTRACT_ADDRESS);
 let account;
 const accountEl = document.getElementById("account");
 const main = async ()=>{
-    const accounts = await web3.eth.getAccounts();
-    account = accounts[0];
-    accountEl.innerText = account;
+    try {
+        //pega as contas do ganache
+        //await window.ethereum.request({ method: 'eth_requestAccounts' });
+        //const accounts = await web3.eth.getAccounts();
+        const accounts = await window.ethereum.request({
+            method: "eth_requestAccounts"
+        });
+        accounts.forEach((acc, index)=>{
+            console.log(`Account ${index + 1}: ${acc}`);
+        });
+        account = accounts[0];
+        accountEl.innerText = account;
+    } catch (error) {
+        console.error("User denied account access", error);
+    }
 };
 main();
 
