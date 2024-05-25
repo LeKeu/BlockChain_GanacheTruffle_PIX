@@ -9,13 +9,31 @@
 </head>
 <body>
 
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <div class="container">
-          <a class="navbar-brand" href="#">PokPix</a>
-            <div id="account" class="d-flex"></div>
-          </div>
-      </nav>
+  <nav id="header" class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container">
+        <a class="navbar-brand" href="#">
+            <img src="./images/PokPix.png" alt="PokPix" width="120" height="30">
+        </a>
+        <div id="account" class="d-flex"></div>
+    </div>
 
+    <div class="btn-group classic" role="group" aria-label="Basic checkbox toggle button group">
+      <input type="checkbox" class="btn-check" id="btncheck1" autocomplete="off">
+      <label class="btn btn-outline-primary" for="btncheck1">Meus Pedidos</label>
+    
+      <input type="checkbox" class="btn-check classic" id="btncheck2" autocomplete="off">
+      <label class="btn btn-outline-primary" for="btncheck2">Meu Histórico</label>
+    </div>
+</nav>
+
+
+    <div class="container">
+      <div class="row">
+        <div class="col">
+          <div id="accountsDIV"></div>
+        </div>
+      </div>
+    </div>
     <script type="module" src="index.js"></script>
 </body>
 </html>
