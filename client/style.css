@@ -27,7 +27,7 @@ form {
 label {
     display: block;
     font-weight: bold;
-    margin-bottom: 5px;
+    margin-bottom: 10px; /* Adiciona espaçamento abaixo dos rótulos */
 }
 
 input[type="text"],
@@ -35,9 +35,14 @@ input[type="number"],
 button {
     width: 100%;
     padding: 10px;
-    margin-bottom: 15px;
+    margin-bottom: 20px; /* Adiciona espaçamento abaixo dos campos de entrada e do botão */
     border: 1px solid #ccc;
     border-radius: 5px;
+}
+
+input.small-input {
+    width: 50%; /* Reduz a largura do campo de input específico */
+    margin: 0 auto 20px auto; /* Centraliza o campo de input e adiciona espaçamento abaixo */
 }
 
 button {

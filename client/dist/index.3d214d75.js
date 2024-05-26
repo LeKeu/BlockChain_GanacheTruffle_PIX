@@ -592,49 +592,55 @@ var _migrationsJsonDefault = parcelHelpers.interopDefault(_migrationsJson);
 const CONTRACT_ADDRESS = (0, _migrationsJsonDefault.default).networks["5777"].address;
 const CONTRACT_ABI = (0, _migrationsJsonDefault.default).abi;
 document.addEventListener("DOMContentLoaded", async function() {
-    // Adiciona um ouvinte de evento para o formulário
     document.getElementById("paymentForm").addEventListener("submit", async function(event) {
-        event.preventDefault(); // Previne o envio do formulário
-        // Obtém os valores dos inputs
-        const from = document.getElementById("from").value.trim();
-        const to = document.getElementById("to").value.trim();
-        let amount = document.getElementById("amount").value.trim();
-        // Converte o valor para Wei (1 ether = 10^18 Wei)
-        amount = (0, _web3Default.default).utils.toWei(amount, "ether");
-        // Chama a função sendPayment do contrato Solidity
-        await sendPayment(from, to, amount);
-    });
-});
-// Função para chamar a função sendPayment do contrato Solidity
-async function sendPayment(from, to, amount) {
-    try {
-        // Solicita uma conta Ethereum ao usuário
+        event.preventDefault();
         const accounts = await window.ethereum.request({
             method: "eth_requestAccounts"
         });
-        const fromAccount = from;
+        const from = accounts[0];
+        const to = document.getElementById("to").value.trim();
+        let amount = document.getElementById("amount").value.trim();
+        amount = (0, _web3Default.default).utils.toWei(amount, "ether");
+        await sendPayment(from, to, amount);
+    });
+    // Atualiza a conta exibida ao carregar a página
+    await updateFromAccount();
+    // Adiciona um ouvinte para mudanças de conta no MetaMask
+    window.ethereum.on("accountsChanged", updateFromAccount);
+});
+async function sendPayment(from, to, amount) {
+    try {
+        const accounts = await window.ethereum.request({
+            method: "eth_requestAccounts"
+        });
+        //const fromAccount = from;
+        const fromAccount = accounts[0];
         console.log(amount);
         console.log(fromAccount);
         console.log(to);
-        // Cria uma instância do contrato
         const web3 = new (0, _web3Default.default)(window.ethereum);
         const contract = new web3.eth.Contract(CONTRACT_ABI, CONTRACT_ADDRESS);
-        // Chama a função sendPayment do contrato
         const result = await contract.methods.sendPayment(from, to, amount).send({
             from: fromAccount,
             value: amount,
             to: to
         });
-        // Exibe uma mensagem de sucesso
         document.getElementById("status").innerHTML = `<p>Transaction successful. Tx Hash: ${result.transactionHash}</p>`;
-        // Atualiza o extrato de transações
-        updateTransactionHistory(from);
-        updateTransactionHistory(to);
     } catch (error) {
-        // Em caso de erro, exibe uma mensagem de erro
         document.getElementById("status").innerHTML = `<p>Error: ${error.message}</p>`;
     }
 }
+async function updateFromAccount() {
+    const accounts = await window.ethereum.request({
+        method: "eth_requestAccounts"
+    });
+    document.getElementById("fromAccount").innerHTML = "De: " + accounts[0];
+}
+// Inicializa a conta ao carregar a página
+async function main() {
+    await updateFromAccount();
+}
+main();
 
 },{"web3":"caAX1","../build/contracts/Migrations.json":"dz5w3","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"caAX1":[function(require,module,exports) {
 /*! For license information please see web3.min.js.LICENSE.txt */ !function(e, t) {

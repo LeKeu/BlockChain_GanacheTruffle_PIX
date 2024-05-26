@@ -25,7 +25,7 @@ form {
 }
 
 label {
-  margin-bottom: 5px;
+  margin-bottom: 10px;
   font-weight: bold;
   display: block;
 }
@@ -34,8 +34,13 @@ input[type="text"], input[type="number"], button {
   border: 1px solid #ccc;
   border-radius: 5px;
   width: 100%;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
   padding: 10px;
+}
+
+input.small-input {
+  width: 50%;
+  margin: 0 auto 20px;
 }
 
 button {
