@@ -2,86 +2,48 @@ const Migrations = artifacts.require("Migrations");
 const assert = require("assert");
 
 contract("Migrations", (accounts) => {
-  const OWNER = accounts[0];
-  const USER = accounts[1];
-  const RECIPIENT = accounts[2];
+    let instance;
+    const [owner, user1, user2] = accounts;
 
-  let instance;
+    before(async () => {
+        instance = await Migrations.deployed();
+    });
 
-  before(async () => {
-    instance = await Migrations.deployed();
-  });
+    it("should register a new user", async () => {
+        await instance.registerUser({ from: user1 });
+        const isRegistered = await instance.isRegistered(user1);
+        assert.strictEqual(isRegistered, true, "User should be registered");
+    });
 
-  it("should set the owner to the deployer", async () => {
-    const owner = await instance.owner();
-    assert.strictEqual(owner, OWNER, "The owner is not the deployer");
-  });
+    it("should allow a user to deposit funds", async () => {
+        const depositAmount = web3.utils.toWei("1", "ether");
+        await instance.deposit({ from: user1, value: depositAmount });
+        const balance = await instance.getBalance({ from: user1 });
+        assert.strictEqual(balance.toString(), depositAmount, "Balance should match deposit amount");
+    });
 
-  it("should add a name for a user", async () => {
-    await instance.addName("Alice", { from: USER });
-    const userName = await instance.getMyName(USER);
-    assert.strictEqual(userName.name, "Alice", "The name was not added correctly");
-    assert.strictEqual(userName.hasName, true, "The hasName flag was not set correctly");
-  });
+    it("should allow a user to withdraw funds", async () => {
+        const initialBalance = await web3.eth.getBalance(user1);
+        const withdrawAmount = web3.utils.toWei("0.5", "ether");
+        await instance.withdraw(withdrawAmount, { from: user1 });
+        const balance = await instance.getBalance({ from: user1 });
+        const expectedBalance = web3.utils.toWei("0.5", "ether");
+        assert.strictEqual(balance.toString(), expectedBalance, "Balance should be reduced after withdrawal");
 
-  it("should create a payment request", async () => {
-    await instance.createRequest(RECIPIENT, web3.utils.toWei("1", "ether"), "Payment request", { from: USER });
-    const requests = await instance.getMyRequest(RECIPIENT);
-    assert.strictEqual(requests[0][0], USER, "The requestor address is incorrect");
-    assert.strictEqual(web3.utils.fromWei(requests[1][0], "ether"), "1", "The amount is incorrect");
-    assert.strictEqual(requests[2][0], "Payment request", "The message is incorrect");
-    assert.strictEqual(requests[3][0], "Alice", "The name is incorrect");
-  });
+        const finalBalance = await web3.eth.getBalance(user1);
+        assert(parseFloat(finalBalance) > parseFloat(initialBalance), "User balance should increase after withdrawal");
+    });
 
-  it("should allow a user to pay a request", async () => {
-    await instance.createRequest(RECIPIENT, web3.utils.toWei("1", "ether"), "Payment request", { from: USER });
+    it("should allow a user to send a payment to another user", async () => {
+        await instance.registerUser({ from: user2 });
+        const paymentAmount = web3.utils.toWei("0.25", "ether");
+        await instance.sendPayment(user1, user2, paymentAmount, { from: user1 }); // Modified to include "from" account
+        const balance1 = await instance.getBalance({ from: user1 });
+        const balance2 = await instance.getBalance({ from: user2 });
 
-    const requestIndex = 0;
-    const requestAmount = web3.utils.toWei("1", "ether");
+        const expectedBalance1 = web3.utils.toWei("0.25", "ether");
+        assert.strictEqual(balance1.toString(), expectedBalance1, "Sender's balance should decrease by payment amount");
 
-    // Pagando a solicitação
-    await instance.payRequest(requestIndex, { from: RECIPIENT, value: requestAmount });
-    const requests = await instance.getMyRequest(RECIPIENT);
-    assert.strictEqual(requests[0].length, 0, "The request was not removed correctly");
-  });
-
-  it("should record the transaction history for both parties", async () => {
-    await instance.createRequest(RECIPIENT, web3.utils.toWei("1", "ether"), "Payment request", { from: USER });
-
-    const requestIndex = 0;
-    const requestAmount = web3.utils.toWei("1", "ether");
-
-    await instance.payRequest(requestIndex, { from: RECIPIENT, value: requestAmount });
-
-    const senderHistory = await instance.getMyHistory(RECIPIENT);
-    const receiverHistory = await instance.getMyHistory(USER);
-
-    assert.strictEqual(senderHistory.length, 1, "Sender history length is incorrect");
-    assert.strictEqual(receiverHistory.length, 1, "Receiver history length is incorrect");
-
-    assert.strictEqual(senderHistory[0].action, "-", "Sender history action is incorrect");
-    assert.strictEqual(web3.utils.fromWei(senderHistory[0].amount, "ether"), "1", "Sender history amount is incorrect");
-    assert.strictEqual(senderHistory[0].message, "Payment request", "Sender history message is incorrect");
-    assert.strictEqual(senderHistory[0].otherPartyAddress, USER, "Sender history other party address is incorrect");
-
-    assert.strictEqual(receiverHistory[0].action, "+", "Receiver history action is incorrect");
-    assert.strictEqual(web3.utils.fromWei(receiverHistory[0].amount, "ether"), "1", "Receiver history amount is incorrect");
-    assert.strictEqual(receiverHistory[0].message, "Payment request", "Receiver history message is incorrect");
-    assert.strictEqual(receiverHistory[0].otherPartyAddress, RECIPIENT, "Receiver history other party address is incorrect");
-  });
-
-  it("should not allow a non-owner to set completed migration", async () => {
-    try {
-      await instance.setCompleted(1, { from: USER });
-      assert.fail("The function should have thrown an error");
-    } catch (err) {
-      assert(err.message.includes("This function is restricted to the contract's owner"), "Expected error message not received");
-    }
-  });
-
-  it("should allow the owner to set completed migration", async () => {
-    await instance.setCompleted(1, { from: OWNER });
-    const lastCompletedMigration = await instance.last_completed_migration();
-    assert.strictEqual(lastCompletedMigration.toNumber(), 1, "The completed migration was not set correctly");
-  });
+        assert.strictEqual(balance2.toString(), paymentAmount, "Recipient's balance should increase by payment amount");
+    });
 });

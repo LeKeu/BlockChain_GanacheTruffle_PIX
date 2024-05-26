@@ -1,135 +1,110 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.4.22 <0.9.0;
-
-// Trabalho de BlockChain LeKeu084
 contract Migrations {
-    address public owner;
-    uint public last_completed_migration;
-
-    constructor(){
-        owner = msg.sender;
-    }
-
-    struct request {
-        address requestor;
+    struct Transaction {
+        address from;
+        address to;
         uint256 amount;
-        string message;
-        string name;
     }
 
-    struct sendReceive{
-        string action;
-        uint256 amount;
-        string message;
-        address otherPartyAddress;
-        string otherPartyName;
+    struct User {
+        uint256 balance;
+        bool exists;
+        uint256 transactionCount; // Contador de transações do usuário
     }
 
-    struct userName{
-        string name;
-        bool hasName;
+    mapping(address => User) private users;
+    mapping(address => mapping(uint256 => Transaction)) private userTransactions;
+
+    event UserRegistered(address indexed user);
+    event Deposit(address indexed user, uint256 amount);
+    event Withdrawal(address indexed user, uint256 amount);
+    event Payment(address indexed from, address indexed to, uint256 amount);
+
+    modifier onlyRegistered() {
+        require(users[msg.sender].exists, "User not registered");
+        _;
     }
 
-    mapping(address => userName) names;
-    mapping(address => request[]) requests;
-    mapping(address => sendReceive[]) history;
-
-    function addName(string memory _name) public {
-        userName storage newUserName = names[msg.sender];
-        newUserName.name = _name;
-        newUserName.hasName = true;
+    function registerUser() external {
+        require(!users[msg.sender].exists, "User already registered");
+        users[msg.sender].exists = true;
+        emit UserRegistered(msg.sender);
     }
 
-    function createRequest(address user, uint256 _amount, string memory _message) public{
-        request memory newRequest;
-        newRequest.requestor = msg.sender;
-        newRequest.amount = _amount;
-        newRequest.message = _message;
-        if(names[msg.sender].hasName){
-            newRequest.name = names[msg.sender].name;
-        }
-        requests[user].push(newRequest);
+    function deposit() external payable onlyRegistered {
+        require(msg.value > 0, "Deposit amount must be greater than zero");
+        users[msg.sender].balance += msg.value;
+
+        // Registra a transação no extrato do usuário
+        uint256 txCount = users[msg.sender].transactionCount;
+        userTransactions[msg.sender][txCount] = Transaction({
+            from: address(0), // Deposito não possui "from"
+            to: msg.sender,
+            amount: msg.value
+        });
+        users[msg.sender].transactionCount++;
+
+        emit Deposit(msg.sender, msg.value);
     }
 
-    function payRequest(uint256 _request) public payable {
-        require(_request < requests[msg.sender].length, "Nao existe tal request");
-        request[] storage myRequests = requests[msg.sender];
-        request storage payableRequest = myRequests[_request];
+    function withdraw(uint256 amount) external onlyRegistered {
+        require(users[msg.sender].balance >= amount, "Insufficient balance");
+        users[msg.sender].balance -= amount;
+        payable(msg.sender).transfer(amount);
 
-        uint256 toPay = payableRequest.amount * 1000000000000000000;
-        require(msg.value == (toPay), "Pague o valor correto");
+        // Registra a transação no extrato do usuário
+        uint256 txCount = users[msg.sender].transactionCount;
+        userTransactions[msg.sender][txCount] = Transaction({
+            from: msg.sender,
+            to: address(0), // Saque não possui "to"
+            amount: amount
+        });
+        users[msg.sender].transactionCount++;
 
-        payable(payableRequest.requestor).transfer(msg.value);
-
-        addHistory(msg.sender, payableRequest.requestor, payableRequest.amount, payableRequest.message);
-
-        myRequests[_request] = myRequests[myRequests.length-1];
-        myRequests.pop();
+        emit Withdrawal(msg.sender, amount);
     }
 
-    function addHistory(address sender, address receiver, uint256 _amount, string memory _message) private {
-        sendReceive memory newSend;
-        newSend.action = "-";
-        newSend.amount = _amount;
-        newSend.message = _message;
-        newSend.otherPartyAddress = receiver;
-        if(names[receiver].hasName){
-            newSend.otherPartyName = names[receiver].name;
-        }
-        history[sender].push(newSend);
+    function sendPayment(address from, address to, uint256 amount) external onlyRegistered {
+        require(users[from].exists, "Sender not registered");
+        require(users[to].exists, "Recipient not registered");
+        require(users[from].balance >= amount, "Insufficient balance");
 
-        sendReceive memory newReceive;
-        newReceive.action = "+";
-        newReceive.amount = _amount;
-        newReceive.message = _message;
-        newReceive.otherPartyAddress = sender;
-        if(names[sender].hasName){
-            newReceive.otherPartyName = names[sender].name;
-        }
-        history[receiver].push(newReceive);
+        // Transfere o valor
+        users[from].balance -= amount;
+        users[to].balance += amount;
+
+        // Registra a transação no extrato do remetente
+        uint256 txCount = users[from].transactionCount;
+        userTransactions[from][txCount] = Transaction({
+            from: from,
+            to: to,
+            amount: amount
+        });
+        users[from].transactionCount++;
+
+        emit Payment(from, to, amount);
     }
 
-    function getMyRequest(address _user) public view returns(
-        address[] memory,
-        uint256[] memory,
-        string[] memory,
-        string[] memory
-    ){
-        address[] memory addrs = new address[](requests[_user].length);
-        uint256[] memory amnt = new uint256[](requests[_user].length);
-        string[] memory msge = new string[](requests[_user].length);
-        string[] memory nme = new string[](requests[_user].length);
-
-        for(uint i = 0; i < requests[_user].length; i++){
-            request storage myRequests = requests[_user][i];
-            addrs[i] = myRequests.requestor;
-            amnt[i] = myRequests.amount;
-            msge[i] = myRequests.message;
-            nme[i] = myRequests.name;
-        }
-
-        return (addrs, amnt, msge, nme);
+    function getBalance() external view onlyRegistered returns (uint256) {
+        return users[msg.sender].balance;
     }
 
-    function getMyHistory(address _user) public view returns(sendReceive[] memory){
-        return history[_user];
+    function isRegistered(address user) external view returns (bool) {
+        return users[user].exists;
     }
 
-    function getMyName(address _user) public view returns(userName memory){
-        return names[_user];
+    function getTransactionCount(address user) external view returns (uint256) {
+        return users[user].transactionCount;
     }
 
-    modifier restricted() {
-    require(
-      msg.sender == owner,
-      "This function is restricted to the contract's owner"
-    );
-    _;
-   }
-
-    function setCompleted(uint completed) public restricted {
-    last_completed_migration = completed;
+    function getTransaction(address user, uint256 index) external view returns (address, address, uint256) {
+        require(index < users[user].transactionCount, "Invalid index");
+        Transaction memory transaction = userTransactions[user][index];
+        return (transaction.from, transaction.to, transaction.amount);
     }
 
-
+    function setCompleted(uint completed) external {
+        // Implemente a lógica necessária para marcar a migração como concluída aqui
+    }
 }

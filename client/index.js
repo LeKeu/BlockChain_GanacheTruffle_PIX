@@ -1,78 +1,52 @@
 import Web3 from 'web3';
-import 'bootstrap/dist/css/bootstrap.css';
-import configuration from '../build/contracts/Migrations.json'
-import PokPixIMG from './images/PokPix.png';
-
-const createElementFromString = (string) => {
-    const el = document.createElement('div');
-    el.innerHTML = string;
-    return el.firstChild;
-};
+import configuration from '../build/contracts/Migrations.json';
 
 const CONTRACT_ADDRESS = configuration.networks['5777'].address;
 const CONTRACT_ABI = configuration.abi;
-const EMPTY_ADDRESS = '0x0000000000000000000000000000000000000000';
 
-if (typeof window.ethereum !== 'undefined') {
-    console.log('MetaMask is installed!');
-}
+document.addEventListener('DOMContentLoaded', async function() {
+    // Adiciona um ouvinte de evento para o formulário
+    document.getElementById('paymentForm').addEventListener('submit', async function(event) {
+        event.preventDefault(); // Previne o envio do formulário
 
-const web3 = new Web3( Web3.givenProvider || 'http://127.0.0.1:7545' );
-const contract = new web3.eth.Contract(CONTRACT_ABI, CONTRACT_ADDRESS);
+        // Obtém os valores dos inputs
+        const from = document.getElementById('from').value.trim();
+        const to = document.getElementById('to').value.trim();
+        let amount = document.getElementById('amount').value.trim();
 
-let account;
+        // Converte o valor para Wei (1 ether = 10^18 Wei)
+        amount = Web3.utils.toWei(amount, 'ether');
 
-const accountEl = document.getElementById('account');
-const accountsDIV = document.getElementById('accountsDIV');
-
-const createRequest = async (user, amount, message) => {
-    try {
-        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-        await contract.methods.createRequest(user, amount, message).send({ from: accounts[0] });
-  
-        console.log('Request created successfully!');
-    } catch (error) {
-        console.error('Error creating request:', error);
-    }
-};
-  
-
-const refreshAccounts = async () => {
-    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-    accountsDIV.innerHTML = '';
-
-    accounts.forEach((acc, index) => {
-        console.log(`Account ${index + 1}: ${acc}`);
-        const nemsei = createElementFromString(
-            `<div class="ticket card" style="width: 18rem;">
-              <div class="card-body">
-                <h5 class="card-title">Account ${index + 1}: ${acc}</h5>
-                <p class="card-text">Eth</p>
-                <button class="btn btn-primary" onclick="">Criar Pedido</button>
-                <button class="btn btn-primary">Pagar Pedido</button>
-              </div>
-            </div>`
-          );
-        accountsDIV.appendChild(nemsei);
+        // Chama a função sendPayment do contrato Solidity
+        await sendPayment(from, to, amount);
     });
-}
+});
 
-const main = async () => {
-    try{
-        //pega as contas do ganache
-        //await window.ethereum.request({ method: 'eth_requestAccounts' });
-        //const accounts = await web3.eth.getAccounts();
-    
+// Função para chamar a função sendPayment do contrato Solidity
+async function sendPayment(from, to, amount) {
+    try {
+        // Solicita uma conta Ethereum ao usuário
         const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const fromAccount = from;
+        console.log(amount);
+        console.log(fromAccount);
+        console.log(to);
+        // Cria uma instância do contrato
+        const web3 = new Web3(window.ethereum);
+        const contract = new web3.eth.Contract(CONTRACT_ABI, CONTRACT_ADDRESS);
 
-        account = accounts[0];
-        accountEl.innerText = account;
+        // Chama a função sendPayment do contrato
+        const result = await contract.methods.sendPayment(from, to, amount).send({ from: fromAccount, value: amount, to: to });
 
-        refreshAccounts();
-    } catch (error){
-        console.error('User denied account access', error);
+        // Exibe uma mensagem de sucesso
+        document.getElementById('status').innerHTML = `<p>Transaction successful. Tx Hash: ${result.transactionHash}</p>`;
+
+        // Atualiza o extrato de transações
+        updateTransactionHistory(from);
+        updateTransactionHistory(to);
+    } catch (error) {
+        // Em caso de erro, exibe uma mensagem de erro
+        document.getElementById('status').innerHTML = `<p>Error: ${error.message}</p>`;
     }
-    
 }
 
-main();

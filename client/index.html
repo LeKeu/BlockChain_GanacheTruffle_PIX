@@ -3,37 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web3 PIX</title>
-    <link rel="stylesheet" href="style.css" />
-
+    <title>Simple Payment Interface</title>
+    <link rel="stylesheet" href="style.css"> <!-- Alterado de styles.css para style.css -->
 </head>
 <body>
+  <div class="container">
+    <img src="./images/PokPix.png" alt="PokPix" width="120" height="30">
+    <h1>Simple Payment Interface</h1>
+    <form id="paymentForm">
+        <label for="from">From (Sender Address):</label>
+        <input type="text" id="from" name="from" required><br><br>
 
-  <nav id="header" class="navbar navbar-expand-lg navbar-light bg-light">
-    <div class="container">
-        <a class="navbar-brand" href="#">
-            <img src="./images/PokPix.png" alt="PokPix" width="120" height="30">
-        </a>
-        <div id="account" class="d-flex"></div>
-    </div>
+        <label for="to">To (Recipient Address):</label>
+        <input type="text" id="to" name="to" required><br><br>
 
-    <div class="btn-group classic" role="group" aria-label="Basic checkbox toggle button group">
-      <input type="checkbox" class="btn-check" id="btncheck1" autocomplete="off">
-      <label class="btn btn-outline-primary" for="btncheck1">Meus Pedidos</label>
-    
-      <input type="checkbox" class="btn-check classic" id="btncheck2" autocomplete="off">
-      <label class="btn btn-outline-primary" for="btncheck2">Meu Histórico</label>
-    </div>
-</nav>
+        <label for="amount">Amount:</label>
+        <input type="number" id="amount" name="amount" min="0" required inputmode="numeric" pattern="[0-9]*">
 
+        <button type="submit">Send Payment</button>
+    </form>
 
-    <div class="container">
-      <div class="row">
-        <div class="col">
-          <div id="accountsDIV"></div>
-        </div>
-      </div>
-    </div>
+    <div id="status"></div>
+</div>
+
+    <div id="transactionHistory"></div>
+
     <script type="module" src="index.js"></script>
 </body>
 </html>
