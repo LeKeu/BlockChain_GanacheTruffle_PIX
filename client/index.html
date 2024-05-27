@@ -4,17 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PokPix</title>
-    <link rel="stylesheet" href="style.css"> <!-- Alterado de styles.css para style.css -->
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="container">
     <img src="./images/PokPix.png" alt="PokPix" width="301" height="108">
     <form id="paymentForm">
-        <!--<label for="from">From (Sender Address):</label>-->
         <h2 for="from" id="fromAccount"></h2>
-        <!--<input type="text" id="from" name="from" required><br><br>-->
+        <div id="balance"></div> 
 
-        <label for="to">Para: (Recipient Address):</label>
+        <label for="to">Para:</label>
         <input type="text" id="to" name="to" required><br><br>
 
         <label for="amount">Valor:</label>

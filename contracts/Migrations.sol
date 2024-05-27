@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.4.22 <0.9.0;
+
 contract Migrations {
     struct Transaction {
         address from;
@@ -36,10 +37,9 @@ contract Migrations {
         require(msg.value > 0, "Deposit amount must be greater than zero");
         users[msg.sender].balance += msg.value;
 
-        // Registra a transação no extrato do usuário
         uint256 txCount = users[msg.sender].transactionCount;
         userTransactions[msg.sender][txCount] = Transaction({
-            from: address(0), // Deposito não possui "from"
+            from: address(0),
             to: msg.sender,
             amount: msg.value
         });
@@ -53,11 +53,10 @@ contract Migrations {
         users[msg.sender].balance -= amount;
         payable(msg.sender).transfer(amount);
 
-        // Registra a transação no extrato do usuário
         uint256 txCount = users[msg.sender].transactionCount;
         userTransactions[msg.sender][txCount] = Transaction({
             from: msg.sender,
-            to: address(0), // Saque não possui "to"
+            to: address(0),
             amount: amount
         });
         users[msg.sender].transactionCount++;
@@ -70,18 +69,24 @@ contract Migrations {
         require(users[to].exists, "Recipient not registered");
         require(users[from].balance >= amount, "Insufficient balance");
 
-        // Transfere o valor
         users[from].balance -= amount;
         users[to].balance += amount;
 
-        // Registra a transação no extrato do remetente
-        uint256 txCount = users[from].transactionCount;
-        userTransactions[from][txCount] = Transaction({
+        uint256 txCountFrom = users[from].transactionCount;
+        userTransactions[from][txCountFrom] = Transaction({
             from: from,
             to: to,
             amount: amount
         });
         users[from].transactionCount++;
+
+        uint256 txCountTo = users[to].transactionCount;
+        userTransactions[to][txCountTo] = Transaction({
+            from: from,
+            to: to,
+            amount: amount
+        });
+        users[to].transactionCount++;
 
         emit Payment(from, to, amount);
     }
@@ -102,6 +107,15 @@ contract Migrations {
         require(index < users[user].transactionCount, "Invalid index");
         Transaction memory transaction = userTransactions[user][index];
         return (transaction.from, transaction.to, transaction.amount);
+    }
+
+    function getAllTransactions(address user) external view returns (Transaction[] memory) {
+        uint256 transactionCount = users[user].transactionCount;
+        Transaction[] memory transactions = new Transaction[](transactionCount);
+        for (uint256 i = 0; i < transactionCount; i++) {
+            transactions[i] = userTransactions[user][i];
+        }
+        return transactions;
     }
 
     function setCompleted(uint completed) external {

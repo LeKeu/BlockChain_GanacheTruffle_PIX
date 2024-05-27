@@ -18,10 +18,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         await sendPayment(from, to, amount);
     });
 
-    // Atualiza a conta exibida ao carregar a página
     await updateFromAccount();
 
-    // Adiciona um ouvinte para mudanças de conta no MetaMask
     window.ethereum.on('accountsChanged', updateFromAccount);
 });
 
@@ -40,7 +38,7 @@ async function sendPayment(from, to, amount) {
         const result = await contract.methods.sendPayment(from, to, amount).send({ from: fromAccount, value: amount, to: to });
 
         document.getElementById('status').innerHTML = `<p>Transaction successful. Tx Hash: ${result.transactionHash}</p>`;
-
+        await updateFromAccount();
     } catch (error) {
         document.getElementById('status').innerHTML = `<p>Error: ${error.message}</p>`;
     }
@@ -48,13 +46,18 @@ async function sendPayment(from, to, amount) {
 
 async function updateFromAccount(){
     const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-    document.getElementById("fromAccount").innerHTML = 'De: '+accounts[0];
+    const fromAccount = accounts[0];
+    document.getElementById("fromAccount").innerHTML = 'De: '+fromAccount;
+
+    const balance = await window.ethereum.request({
+        method: 'eth_getBalance',
+        params: [fromAccount, 'latest']
+    });
+    document.getElementById('balance').innerHTML = `<p>Saldo Atual: ${Web3.utils.fromWei(balance, 'ether')} ETH</p>`;
 }
 
-// Inicializa a conta ao carregar a página
 async function main(){
     await updateFromAccount();
 }
 
 main();
-
