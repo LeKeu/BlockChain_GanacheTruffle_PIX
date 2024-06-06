@@ -34,7 +34,7 @@ input[type="text"],
 input[type="number"],
 button {
     width: 100%;
-    padding: 10px;
+    padding: 5px;
     margin-bottom: 20px; /* Adiciona espaçamento abaixo dos campos de entrada e do botão */
     border: 1px solid #ccc;
     border-radius: 5px;

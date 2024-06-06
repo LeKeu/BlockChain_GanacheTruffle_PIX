@@ -26,18 +26,20 @@ document.addEventListener('DOMContentLoaded', async function() {
 async function sendPayment(from, to, amount) {
     try {
         const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-        //const fromAccount = from;
+       
         const fromAccount = accounts[0];
-        console.log(amount);
-        console.log(fromAccount);
-        console.log(to);
+
+        if(from == to.toLowerCase()){
+            document.getElementById('status').innerHTML = `<p>Duas contas iguais</p>`;
+            return;
+        }
         
         const web3 = new Web3(window.ethereum);
         const contract = new web3.eth.Contract(CONTRACT_ABI, CONTRACT_ADDRESS);
 
         const result = await contract.methods.sendPayment(from, to, amount).send({ from: fromAccount, value: amount, to: to });
 
-        document.getElementById('status').innerHTML = `<p>Transaction successful. Tx Hash: ${result.transactionHash}</p>`;
+        document.getElementById('status').innerHTML = `<p>Transação ocorrida com sucesso. Tx Hash: ${result.transactionHash}</p>`;
         await updateFromAccount();
     } catch (error) {
         document.getElementById('status').innerHTML = `<p>Error: ${error.message}</p>`;

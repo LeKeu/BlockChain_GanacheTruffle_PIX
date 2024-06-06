@@ -11,7 +11,7 @@ contract Migrations {
     struct User {
         uint256 balance;
         bool exists;
-        uint256 transactionCount; // Contador de transações do usuário
+        uint256 transactionCount;
     }
 
     mapping(address => User) private users;
@@ -119,6 +119,6 @@ contract Migrations {
     }
 
     function setCompleted(uint completed) external {
-        // Implemente a lógica necessária para marcar a migração como concluída aqui
+        // 
     }
 }

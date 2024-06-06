@@ -10,6 +10,7 @@
   <div class="container">
     <img src="./images/PokPix.png" alt="PokPix" width="301" height="108">
     <form id="paymentForm">
+      <div>
         <h2 for="from" id="fromAccount"></h2>
         <div id="balance"></div> 
 
@@ -17,9 +18,10 @@
         <input type="text" id="to" name="to" required><br><br>
 
         <label for="amount">Valor:</label>
-        <input type="number" id="amount" name="amount" min="0" required inputmode="numeric" pattern="[0-9]*" class="small-input">
+        <input type="number" step="0.01" id="amount" name="amount" min="0" required class="small-input">
 
-        <button type="submit">Send Payment</button>
+        <button type="submit">Enviar PokéReal</button>
+      </div>
     </form>
 
     <div id="status"></div>
